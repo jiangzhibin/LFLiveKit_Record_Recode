@@ -1,0 +1,22 @@
+PODS:
+  - LFLiveKit (2.4.2):
+    - LMGPUImage
+    - pili-librtmp (= 1.0.3.1)
+  - LMGPUImage (0.1.9)
+  - pili-librtmp (1.0.3.1)
+
+DEPENDENCIES:
+  - LFLiveKit (from `../.`)
+
+EXTERNAL SOURCES:
+  LFLiveKit:
+    :path: "../."
+
+SPEC CHECKSUMS:
+  LFLiveKit: f1558eb49184da5069e630ae50891458c676416d
+  LMGPUImage: 8e2e5d0f7065953eb7812de842db4c87d59abf09
+  pili-librtmp: 0adf2516f4b5958b3cb079a4c3d4f6a4a9f49ce9
+
+PODFILE CHECKSUM: 2b9668a88a0884a634b34b8426228f739e9588de
+
+COCOAPODS: 1.1.0.beta.2
