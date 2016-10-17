@@ -41,6 +41,8 @@ inline static NSString *formatedSpeed(float bytes, float elapsed_milli) {
 @property (nonatomic, strong) LFLiveSession *session;
 @property (nonatomic, strong) UILabel *stateLabel;
 
+@property (nonatomic, strong) UIButton *recordButton;
+
 @property (nonatomic, strong) NSString *publishStreamUrlString;
 
 @end
@@ -58,6 +60,7 @@ inline static NSString *formatedSpeed(float bytes, float elapsed_milli) {
         [self.containerView addSubview:self.cameraButton];
         [self.containerView addSubview:self.beautyButton];
         [self.containerView addSubview:self.startLiveButton];
+        [self.containerView addSubview:self.recordButton];
         self.publishStreamUrlString = @"rtmp://211.157.227.123/folder/test";
     }
     return self;
@@ -168,7 +171,7 @@ inline static NSString *formatedSpeed(float bytes, float elapsed_milli) {
         videoConfiguration.videoMaxKeyframeInterval = 48;
         videoConfiguration.outputImageOrientation = UIInterfaceOrientationPortrait;
         videoConfiguration.autorotate = NO;
-        videoConfiguration.sessionPreset = LFCaptureSessionPreset720x1280;
+        videoConfiguration.sessionPreset = LFCaptureSessionPreset360x640;
         _session = [[LFLiveSession alloc] initWithAudioConfiguration:[LFLiveAudioConfiguration defaultConfiguration] videoConfiguration:videoConfiguration captureType:LFLiveCaptureDefaultMask];
 
         /**    自己定制单声道  */
@@ -259,19 +262,19 @@ inline static NSString *formatedSpeed(float bytes, float elapsed_milli) {
         _session.preView = self;
         
         /*本地存储*/
-        _session.saveLocalVideo = YES;
-        NSString *localVideoFileName = [[[self.publishStreamUrlString stringByDeletingLastPathComponent]lastPathComponent] stringByAppendingPathExtension:@"mp4"];
-        NSString *pathToMovie = [[NSHomeDirectory() stringByAppendingPathComponent:@"Documents"]stringByAppendingPathComponent:localVideoFileName];
-//        unlink([pathToMovie UTF8String]); // If a file already exists, AVAssetWriter won't let you record new frames, so delete the old movie
-        if ([[NSFileManager defaultManager] fileExistsAtPath:pathToMovie]) {
-            NSError *error = nil;
-            [[NSFileManager defaultManager] removeItemAtPath:pathToMovie error:&error];
-            if (error) {
-                NSLog(@"删除:%@失败：%@",pathToMovie,error);
-            }
-        }
-        NSURL *movieURL = [NSURL fileURLWithPath:pathToMovie];
-        _session.saveLocalVideoPath = movieURL;
+//        _session.saveLocalVideo = YES;
+//        NSString *localVideoFileName = [[[self.publishStreamUrlString stringByDeletingLastPathComponent]lastPathComponent] stringByAppendingPathExtension:@"mp4"];
+//        NSString *pathToMovie = [[NSHomeDirectory() stringByAppendingPathComponent:@"Documents"]stringByAppendingPathComponent:localVideoFileName];
+////        unlink([pathToMovie UTF8String]); // If a file already exists, AVAssetWriter won't let you record new frames, so delete the old movie
+//        if ([[NSFileManager defaultManager] fileExistsAtPath:pathToMovie]) {
+//            NSError *error = nil;
+//            [[NSFileManager defaultManager] removeItemAtPath:pathToMovie error:&error];
+//            if (error) {
+//                NSLog(@"删除:%@失败：%@",pathToMovie,error);
+//            }
+//        }
+//        NSURL *movieURL = [NSURL fileURLWithPath:pathToMovie];
+//        _session.saveLocalVideoPath = movieURL;
         
         /*
         UIImageView *imageView = [[UIImageView alloc] init];
@@ -379,6 +382,60 @@ inline static NSString *formatedSpeed(float bytes, float elapsed_milli) {
         }];
     }
     return _startLiveButton;
+}
+
+
+- (UIButton *)recordButton {
+    if (!_recordButton) {
+        _recordButton = [UIButton new];
+        _recordButton.size = CGSizeMake(self.width - 60, 44);
+        _recordButton.left = 30;
+        _recordButton.bottom = self.height - 110;
+        _recordButton.layer.cornerRadius = _startLiveButton.height/2;
+        [_recordButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+        [_recordButton.titleLabel setFont:[UIFont systemFontOfSize:16]];
+        [_recordButton setTitle:@"开始录制" forState:UIControlStateNormal];
+        [_recordButton setBackgroundColor:[UIColor colorWithRed:50 green:32 blue:245 alpha:1]];
+        _recordButton.exclusiveTouch = YES;
+        __weak typeof(self) _self = self;
+        [_recordButton addBlockForControlEvents:UIControlEventTouchUpInside block:^(id sender) {
+            _self.recordButton.selected = !_self.recordButton.selected;
+            if (_self.recordButton.selected) {
+                [_self.recordButton setTitle:@"停止录制" forState:UIControlStateNormal];
+                [_self startRecording];
+            } else {
+                [_self.recordButton setTitle:@"开始录制" forState:UIControlStateNormal];
+                [_self stopRecording];
+            }
+        }];
+    }
+    return _recordButton;
+}
+
+
+- (void)startRecording {
+    static NSUInteger fileIndex = 0;
+    
+    NSString *localVideoFileName = [[[self.publishStreamUrlString stringByDeletingLastPathComponent] lastPathComponent] stringByAppendingFormat:@"_%zd",fileIndex++];
+    localVideoFileName = [localVideoFileName stringByAppendingPathExtension:@"mp4"];
+    NSString *pathToMovie = [[NSHomeDirectory() stringByAppendingPathComponent:@"Documents"]stringByAppendingPathComponent:localVideoFileName];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:pathToMovie]) {
+        NSError *error = nil;
+        [[NSFileManager defaultManager] removeItemAtPath:pathToMovie error:&error];
+        if (error) {
+            NSLog(@"删除:%@失败：%@",pathToMovie,error);
+        }
+    }
+    NSURL *localMovieUrl = [NSURL fileURLWithPath:pathToMovie];
+    [self.session startRecordingToLocalFileURL:localMovieUrl];
+}
+
+- (void)stopRecording {
+    _recordButton.enabled = NO;
+    __weak typeof(self) _self = self;
+    [self.session stopRecordingWithCompletionHandler:^{
+        _self.recordButton.enabled = YES;
+    }];
 }
 
 @end

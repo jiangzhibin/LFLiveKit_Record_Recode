@@ -425,4 +425,17 @@
     }
 }
 
+#pragma mark - 录制
+- (void)startRecordingToLocalFileURL:(NSURL *)localFileURL {
+    [self.videoCaptureSource startRecordingToLocalFileURL:localFileURL];
+}
+
+- (void)stopRecording {
+    [self.videoCaptureSource stopRecording];
+}
+
+- (void)stopRecordingWithCompletionHandler:(void(^)(void))completionHandler {
+    [self.videoCaptureSource stopRecordingWithCompletionHandler:completionHandler];
+}
+
 @end

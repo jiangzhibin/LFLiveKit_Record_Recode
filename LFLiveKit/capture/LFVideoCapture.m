@@ -98,6 +98,64 @@
         if(self.saveLocalVideo) [self.movieWriter startRecording];
     }
 }
+- (void)startRecordingToLocalFileURL:(NSURL *)localFileURL {
+    if (self.saveLocalVideo == YES) {
+        return;
+    }
+    self.saveLocalVideo = YES;
+    self.saveLocalVideo = localFileURL;
+    GPUImageMovieWriter *movieWriter = [[GPUImageMovieWriter alloc] initWithMovieURL:localFileURL size:self.configuration.videoSize];
+    movieWriter.encodingLiveVideo = YES;
+    movieWriter.shouldPassthroughAudio = YES;
+    self.movieWriter = movieWriter;
+    self.videoCamera.audioEncodingTarget = movieWriter;
+    
+    // 添加水印
+    if(self.warterMarkView){
+        [self.blendFilter addTarget:self.movieWriter];
+    }
+    else {
+        [self.output addTarget:self.movieWriter];
+    }
+    [self.movieWriter startRecording];
+}
+
+- (void)stopRecording {
+    if (self.saveLocalVideo == NO) {
+        return;
+    }
+    self.saveLocalVideo = NO;
+    [self.movieWriter finishRecording];
+    // 添加水印
+    if(self.warterMarkView){
+        [self.blendFilter removeTarget:self.movieWriter];
+    }
+    else {
+        [self.output removeTarget:self.movieWriter];
+    }
+}
+
+- (void)stopRecordingWithCompletionHandler:(void(^)(void))completionHandler {
+    
+    if (self.saveLocalVideo == NO) {
+        return;
+    }
+    self.saveLocalVideo = NO;
+    
+    __weak typeof(self) _self = self;
+    [self.movieWriter finishRecordingWithCompletionHandler:^ {
+        // 添加水印
+        if(_self.warterMarkView){
+            [_self.blendFilter removeTarget:_self.movieWriter];
+        }
+        else {
+            [_self.output removeTarget:_self.movieWriter];
+        }
+        if (completionHandler) {
+            completionHandler();
+        }
+    }];
+}
 
 - (void)setPreView:(UIView *)preView {
     if (self.gpuImageView.superview) [self.gpuImageView removeFromSuperview];
